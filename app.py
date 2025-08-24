@@ -10,7 +10,7 @@ from key_iv import AES_KEY, AES_IV
 app = Flask(__name__)
 session = requests.Session()
 
-DATA_API = "https://clientbp.ggblueshark.com/UpdateSocialBasicInfo"
+DATA_API = "https://client.ind.freefiremobile.com/UpdateSocialBasicInfo"
 
 HEADERS_TEMPLATE = {
     'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_Z01QD Build/PI)",
