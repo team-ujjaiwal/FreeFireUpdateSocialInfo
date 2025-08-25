@@ -28,24 +28,28 @@ def encrypt_message(key: bytes, iv: bytes, plaintext: bytes) -> bytes:
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return cipher.encrypt(pad(plaintext, AES.block_size))
 
-def build_signature(uid: int, region: int, bio: str) -> my_pb2.Signature:
+def build_signature(uid: str, region: str, bio: str) -> my_pb2.Signature:
     msg = my_pb2.Signature()
-    # Action / opcode — aap 9 bhej rahe the; yahi rakhte hain.
     msg.field2 = 9
 
-    # MOST LIKELY mappings (server ke hisaab se yahi fields expected hote hain)
-    msg.field5 = int(uid)       # UID / player id
-    msg.field6 = int(region)    # Region / server code
+    # UID as int (agar number hai)
+    msg.field5 = int(uid)
 
-    # Bio
+    # Region ko ab string treat karo
+    # Agar pb2 ka type int64 hai to safe rakhne ke liye
+    # ek mapping use karna hoga
+    region_map = {
+        "ind": 101,
+        "br": 102,
+        "sg": 103,
+        "us": 104,
+    }
+    msg.field6 = region_map.get(region.lower(), 0)
+
     msg.field8 = bio
-
-    # Flag / toggle
     msg.field9 = 1
-
-    # Timestamps / sequence-like fields
-    msg.field11 = int(time.time())  # unix epoch
-    msg.field12 = int(datetime.now().strftime("%Y%m%d%H%M%S"))  # YYYYMMDDHHMMSS
+    msg.field11 = int(time.time())
+    msg.field12 = int(datetime.now().strftime("%Y%m%d%H%M%S"))
     return msg
 
 @app.route("/update_bio", methods=["GET"])
