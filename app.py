@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 app = Flask(__name__)
 
-DATA_API = "https://clientbp.ggblueshark.com/UpdateSocialBasicInfo"
+DATA_API = "https://client.ind.freefiremobile.com/UpdateSocialBasicInfo"
 DECODE_API = "https://team-x-ujjaiwal.vercel.app/decode_jwt"  # NEW DECODE API
 
 HEADERS_TEMPLATE = {
