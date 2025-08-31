@@ -10,7 +10,6 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 app = Flask(__name__)
 
-DATA_API = "https://client.ind.freefiremobile.com/UpdateSocialBasicInfo"
 DECODE_API = "https://team-x-ujjaiwal.vercel.app/decode_jwt"  # NEW DECODE API
 
 HEADERS_TEMPLATE = {
@@ -33,9 +32,9 @@ def encrypt_message(key, iv, plaintext):
 
 def get_user_info_from_api(token):
     try:
-        res = requests.get(DECODE_API, params={"jwt_token": token}, timeout=5)  # updated param
+        res = requests.get(DECODE_API, params={"jwt_token": token}, timeout=5)
         data = res.json()
-        decoded = data.get("data", {})  # adjust to match your new API response
+        decoded = data.get("data", {})
 
         return {
             "uid": decoded.get("account_id", "Unknown"),
@@ -49,9 +48,22 @@ def get_user_info_from_api(token):
             "nickname": f"Error: {str(e)}"
         }
 
-def update_bio_with_token(token, user_bio):
+def get_url(server_name: str) -> str:
+    server_name = server_name.upper()
+
+    if server_name == "IND":
+        return "https://client.ind.freefiremobile.com/UpdateSocialBasicInfo"
+    elif server_name in {"BR", "US", "SAC", "NA"}:
+        return "https://client.us.freefiremobile.com/UpdateSocialBasicInfo"
+    else:
+        # fallback for other regions (EU, ME, etc.)
+        return "https://clientbp.ggblueshark.com/UpdateSocialBasicInfo"
+
+def update_bio_with_token(token, user_bio, region):
     headers = HEADERS_TEMPLATE.copy()
     headers['Authorization'] = f"Bearer {token}"
+
+    api_url = get_url(region)
 
     message = my_pb2.Signature()
     message.field2 = 9
@@ -59,7 +71,7 @@ def update_bio_with_token(token, user_bio):
     message.field9 = 1
 
     encrypted_data = encrypt_message(AES_KEY, AES_IV, message.SerializeToString())
-    response = session.post(DATA_API, data=encrypted_data, headers=headers, verify=False)
+    response = session.post(api_url, data=encrypted_data, headers=headers, verify=False)
 
     try:
         response_text = response.content.decode('utf-8')
@@ -80,7 +92,8 @@ def api_update_bio():
         }), 400
 
     user_info = get_user_info_from_api(token)
-    status_code, response_text = update_bio_with_token(token, bio)
+    region = user_info.get("region", "IND")
+    status_code, response_text = update_bio_with_token(token, bio, region)
 
     return jsonify({
         "status": "success" if status_code == 200 else "fail",
@@ -88,7 +101,7 @@ def api_update_bio():
         "message": "✅ Bio updated successfully!" if status_code == 200 else "❌ Bio update failed!",
         "bio_sent": bio,
         "uid": user_info["uid"],
-        "region": user_info["region"],
+        "region": region,
         "nickname": user_info["nickname"],
         "raw_response": response_text
     })
@@ -99,4 +112,3 @@ def home():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host="0.0.0.0")
-    
